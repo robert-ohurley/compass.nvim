@@ -1,5 +1,5 @@
 local state = require("compass.state")
-local chooser = require("compass.chooser")
+local picker = require("compass.picker")
 
 local M = {}
 
@@ -144,7 +144,7 @@ function M.forward()
     return
   end
 
-  chooser.choose_forward(children)
+  picker.choose_forward(children)
 end
 
 function M.reset()

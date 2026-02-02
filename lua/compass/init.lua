@@ -4,9 +4,6 @@ local default_config = {
   history = {
     mode = "graph", -- "graph" | "linear"
   },
-  ui = {
-    chooser = "ui.select", -- "ui.select" | "telescope"
-  },
   debug = false,
 }
 
@@ -19,11 +16,9 @@ function M.setup(user_config)
   -- State starts uninitialized - root will be created on first valid buffer
   local state = require("compass.state")
 
-  -- Setup navigation and chooser with config
+  -- Setup navigation with config
   local navigation = require("compass.navigation")
-  local chooser = require("compass.chooser")
   navigation.setup(config)
-  chooser.setup(config)
 
   -- Setup commands
   local commands = require("compass.commands")

@@ -2,12 +2,6 @@ local state = require("compass.state")
 
 local M = {}
 
-local config = nil
-
-function M.setup(user_config)
-  config = user_config
-end
-
 local function get_buffer_info(buf)
   local path = vim.api.nvim_buf_get_name(buf)
   local name = path
@@ -39,7 +33,7 @@ function M.choose_forward(children)
     return
   end
 
-  -- Build items for chooser
+  -- Build items for picker
   local items = {}
   for _, node in ipairs(children) do
     local info = get_buffer_info(node.buf)
@@ -51,13 +45,7 @@ function M.choose_forward(children)
     })
   end
 
-  local chooser_type = config.ui.chooser or "ui.select"
-
-  if chooser_type == "telescope" then
-    M._choose_with_telescope(items)
-  else
-    M._choose_with_ui_select(items)
-  end
+  M._choose_with_ui_select(items)
 end
 
 function M._choose_with_ui_select(items)
@@ -94,59 +82,6 @@ function M._choose_with_ui_select(items)
       end
     end
   end)
-end
-
-function M._choose_with_telescope(items)
-  local has_telescope, telescope = pcall(require, "telescope.builtin")
-  if not has_telescope then
-    print("Compass: Telescope not available, falling back to ui.select")
-    M._choose_with_ui_select(items)
-    return
-  end
-
-  -- Convert items to a format Telescope can use
-  local pickers = require("telescope.pickers")
-  local finders = require("telescope.finders")
-  local conf = require("telescope.config").values
-  local actions = require("telescope.actions")
-  local action_state = require("telescope.actions.state")
-
-  local opts = {
-    prompt_title = "Compass: Choose forward path",
-    finder = finders.new_table({
-      results = items,
-      entry_maker = function(entry)
-        return {
-          value = entry,
-          display = entry.text,
-          ordinal = entry.text,
-        }
-      end,
-    }),
-    sorter = conf.generic_sorter(opts),
-    attach_mappings = function(prompt_bufnr, map)
-      actions.select_default:replace(function()
-        actions.close(prompt_bufnr)
-        local selection = action_state.get_selected_entry()
-        if selection and selection.value then
-          local node = selection.value.node
-          -- Lazy require to avoid circular dependency
-          local navigation = require("compass.navigation")
-          -- Check if buffer is still valid
-          if not navigation.is_buf_valid(node.buf) then
-            print(string.format("Compass: Cannot navigate - buffer %d has been deleted", node.buf))
-            return
-          end
-          state.set_current(node)
-          navigation.set_ignore_next_switch(true)
-          vim.api.nvim_set_current_buf(node.buf)
-        end
-      end)
-      return true
-    end,
-  }
-
-  pickers.new(opts):find()
 end
 
 return M
