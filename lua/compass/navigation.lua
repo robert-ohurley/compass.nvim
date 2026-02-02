@@ -28,19 +28,19 @@ function M.is_buf_valid(buf)
 end
 
 local function should_track_buffer(buf)
-  if not is_buf_valid(buf) then
-    return false
+  if is_buf_valid(buf) then
+    return true
   end
 
   local buf_type = vim.api.nvim_buf_get_option(buf, "buftype")
   local buf_name = vim.api.nvim_buf_get_name(buf)
 
-  -- Ignore certain buffer types (help, quickfix, terminal, etc.)
+  -- Ignore certain buffer types e.g. help, quickfix, terminal, etc.
   if buf_type ~= "" and buf_type ~= "acwrite" then
     return false
   end
 
-  -- Temporary buffers typically don't have names
+  -- Temporary buffers don't seem to have names
   if buf_name == "" then
     return false
   end
@@ -67,6 +67,10 @@ function M.navigate_to(new_buf)
   -- If root doesn't exist, create it with this buffer
   if root == nil then
     local node = state.create_node(new_buf, nil)
+    -- Store initial cursor position
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    node.cursor = { line = cursor[1], col = cursor[2] + 1 }
+    -- #TODO: use ensure_root here
     state.register_node(node)
     state.set_root(node)
     state.set_current(node)
@@ -86,6 +90,9 @@ function M.navigate_to(new_buf)
 
   -- Create new node
   local node = state.create_node(new_buf, cur)
+  -- Store initial cursor position
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  node.cursor = { line = cursor[1], col = cursor[2] + 1 }
   table.insert(cur.children, node)
   state.register_node(node)
   state.set_current(node)
@@ -99,7 +106,6 @@ function M.back()
   end
 
   local parent = cur.parent
-
   if parent == nil then
     print("Compass: No Previous Navigation Available")
     return
@@ -115,6 +121,10 @@ function M.back()
     end
     M.set_ignore_next_switch(true)
     vim.api.nvim_set_current_buf(parent.buf)
+    -- Restore cursor position
+    if parent.cursor then
+      vim.api.nvim_win_set_cursor(0, { parent.cursor.line, parent.cursor.col - 1 })
+    end
   end
 end
 
@@ -141,6 +151,10 @@ function M.forward()
     state.set_current(target)
     M.set_ignore_next_switch(true)
     vim.api.nvim_set_current_buf(target.buf)
+    -- Restore cursor position
+    if target.cursor then
+      vim.api.nvim_win_set_cursor(0, { target.cursor.line, target.cursor.col - 1 })
+    end
     return
   end
 
@@ -167,6 +181,7 @@ function M.toggle_history_mode()
 end
 
 -- Helper function to get path from current node to root
+-- Worth noting that this returns the reverse path from leaf to root.
 function M.get_path_to_root()
   local path = {}
   local node = state.get_current()
@@ -188,7 +203,6 @@ function M._convert_graph_to_linear()
     return
   end
   
-  -- Prune all branches: for each parent in the path, keep only its child that's in the path
   for i = #path, 2, -1 do
     local parent = path[i]
     local child = path[i - 1]

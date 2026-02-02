@@ -2,7 +2,7 @@ local M = {}
 
 local default_config = {
   history = {
-    mode = "graph", -- "graph" | "linear"
+    mode = "graph",
   },
   debug = false,
 }
@@ -13,27 +13,34 @@ function M.setup(user_config)
   user_config = user_config or {}
   config = vim.tbl_deep_extend("force", default_config, user_config)
 
-  -- State starts uninitialized - root will be created on first valid buffer
   local state = require("compass.state")
-
-  -- Setup navigation with config
   local navigation = require("compass.navigation")
-  navigation.setup(config)
-
-  -- Setup commands
   local commands = require("compass.commands")
+
+  navigation.setup(config)
   commands.setup()
 
-  -- Use navigation module's buffer tracking function
   local function should_track_buffer(buf)
     return navigation.should_track_buffer(buf)
   end
 
-  -- Hook into buffer events to detect navigation
+  local initialized = false
+
   local augroup = vim.api.nvim_create_augroup("CompassNavigation", { clear = true })
 
-  -- Track if we've initialized the first buffer
-  local initialized = false
+  vim.api.nvim_create_autocmd("CursorMoved", {
+    group = augroup,
+    callback = function()
+      local current_node = state.get_current()
+      if current_node and current_node.buf then
+        local current_buf = vim.api.nvim_get_current_buf()
+        if current_node.buf == current_buf then
+          local cursor = vim.api.nvim_win_get_cursor(0)
+          current_node.cursor = { line = cursor[1], col = cursor[2] + 1 }
+        end
+      end
+    end,
+  })
 
   -- Use BufEnter for navigation detection
   -- BufReadPost also fires after file is loaded (ensures name is set)
@@ -48,14 +55,12 @@ function M.setup(user_config)
 
       local current_buf = vim.api.nvim_get_current_buf()
 
-      -- Skip if buffer shouldn't be tracked
       if not should_track_buffer(current_buf) then
         return
       end
 
       local current_node = state.get_current()
 
-      -- If we haven't initialized yet, navigate_to will create root and first node
       if not initialized then
         initialized = true
         navigation.navigate_to(current_buf)

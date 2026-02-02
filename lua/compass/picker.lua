@@ -5,10 +5,10 @@ local M = {}
 local function get_buffer_info(buf)
   local path = vim.api.nvim_buf_get_name(buf)
   local name = path
+  -- TODO: will we even hit this case????
   if path == "" then
     name = "[No Name]"
   else
-    -- Extract basename + up to 2 parent directories
     local basename = vim.fn.fnamemodify(path, ":t")
     local parent1 = vim.fn.fnamemodify(path, ":h:t")
     local parent2 = vim.fn.fnamemodify(path, ":h:h:t")
@@ -29,11 +29,6 @@ local function get_buffer_info(buf)
 end
 
 function M.choose_forward(children)
-  if #children == 0 then
-    return
-  end
-
-  -- Build items for picker
   local items = {}
   for _, node in ipairs(children) do
     local info = get_buffer_info(node.buf)
@@ -57,7 +52,6 @@ function M._choose_with_ui_select(items)
   vim.ui.select(options, {
     prompt = "Compass: Choose forward path",
     format_item = function(option)
-      -- Find the item by text
       for _, item in ipairs(items) do
         if item.text == option then
           return string.format("%s (id: %d)", item.text, item.id)
@@ -68,17 +62,22 @@ function M._choose_with_ui_select(items)
   }, function(choice, idx)
     if choice and idx then
       local selected_item = items[idx]
+
       if selected_item then
-        -- Lazy require to avoid circular dependency
         local navigation = require("compass.navigation")
-        -- Check if buffer is still valid
+          
         if not navigation.is_buf_valid(selected_item.node.buf) then
-          print(string.format("Compass: Cannot navigate - buffer %d has been deleted", selected_item.node.buf))
+          print("Compass: Cannot navigate forward")
           return
         end
+
         state.set_current(selected_item.node)
         navigation.set_ignore_next_switch(true)
         vim.api.nvim_set_current_buf(selected_item.node.buf)
+
+        if selected_item.node.cursor then
+          vim.api.nvim_win_set_cursor(0, { selected_item.node.cursor.line, selected_item.node.cursor.col - 1 })
+        end
       end
     end
   end)

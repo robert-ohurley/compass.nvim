@@ -1,6 +1,5 @@
 local M = {}
 
--- Global state
 local State = {
   root = nil,
   current = nil,
@@ -17,6 +16,7 @@ function Node.new(buf, parent)
   self.buf = buf
   self.parent = parent
   self.children = {}
+  self.cursor = { line = 1, col = 1 }
   return self
 end
 
@@ -45,19 +45,16 @@ function M.get_root()
   return State.root
 end
 
+function M.set_root(node)
+  State.root = node
+end
+
 function M.get_current()
-  if State.current == nil then
-    return nil
-  end
   return State.current
 end
 
 function M.set_current(node)
   State.current = node
-end
-
-function M.set_root(node)
-  State.root = node
 end
 
 function M.register_node(node)
