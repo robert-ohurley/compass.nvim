@@ -76,10 +76,15 @@ function M.debug_dump()
     end
 
     local line = string.format("%sNode %d: %s", indent, node.id, buf_name)
+    local is_current = current and node.id == current.id
     local is_in_path = path_nodes[node.id] == true
     
-    if is_in_path then
+    if is_current then
+      -- Current node: green
       echo_colored(line, "DiffAdd")
+    elseif is_in_path then
+      -- Other nodes in path: yellow
+      echo_colored(line, "WarningMsg")
     else
       print(line)
     end
