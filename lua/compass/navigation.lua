@@ -28,19 +28,44 @@ function M.is_buf_valid(buf)
 end
 
 local function should_track_buffer(buf)
-  if is_buf_valid(buf) then
-    return true
+  -- First check if buffer is valid
+  if not is_buf_valid(buf) then
+    return false
   end
 
   local buf_type = vim.api.nvim_buf_get_option(buf, "buftype")
   local buf_name = vim.api.nvim_buf_get_name(buf)
+  local filetype = vim.api.nvim_buf_get_option(buf, "filetype")
 
   -- Ignore certain buffer types e.g. help, quickfix, terminal, etc.
   if buf_type ~= "" and buf_type ~= "acwrite" then
     return false
   end
 
-  -- Temporary buffers don't seem to have names
+  -- Ignore NvimTree buffers
+  if filetype == "NvimTree" or string.match(buf_name, "^NvimTree") then
+    return false
+  end
+
+  -- Ignore other special filetypes
+  local ignored_filetypes = {
+    "qf",           -- quickfix
+    "help",         -- help
+    "man",          -- man pages
+    "fugitive",     -- git fugitive
+    "fugitiveblame", -- git blame
+    "gitcommit",     -- git commit
+    "gitrebase",    -- git rebase
+    "Trouble",      -- trouble.nvim
+    "toggleterm",   -- toggleterm
+    "DressingInput", -- dressing.nvim
+    "DressingSelect", -- dressing.nvim
+  }
+  if vim.tbl_contains(ignored_filetypes, filetype) then
+    return false
+  end
+
+  -- Temporary buffers don't have names
   if buf_name == "" then
     return false
   end
