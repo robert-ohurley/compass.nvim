@@ -1,13 +1,8 @@
-# compass.nvim
+  # compass.nvim
 
-A Neovim plugin for tracking buffer navigation history with support for both graph and linear history modes.
+A Neovim plugin that tracks your buffer navigation history. It remembers which buffers you visited and where your cursor was in each one, so when you navigate back or forward, you return to the exact position you were at.
 
-## Features
-
-- **Graph Mode**: Preserves branching navigation history
-- **Linear Mode**: Maintains a stack-like navigation history (prunes forward history on branch)
-- **Forward Navigation**: Automatically resolves ambiguity or prompts user to choose
-- **Visual Debugging**: Color-coded debug dump showing current navigation path
+You can use it in graph mode (keeps all branches of your navigation) or linear mode (prunes forward history when you branch off). If there are multiple forward paths, it'll ask you which one to take.
 
 ## Installation
 
@@ -22,58 +17,14 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
         mode = "graph", -- "graph" | "linear"
       },
     })
+
+    vim.keymap.set('n', '<C-u>', '<cmd>CompassBack<CR>', { desc = '[C]ompass [B]ack' })
+    vim.keymap.set('n', '<C-i>', '<cmd>CompassForward<CR>', { desc = '[C]ompass [F]orward' })
+    vim.keymap.set('n', '<C-o>', '<cmd>CompassDebugDump<CR>', { desc = '[C]ompass [D]ebug dump' })
   end,
 }
 ```
 
-For local development:
-
-```lua
-{
-  dir = "/path/to/compass.nvim",
-  config = function()
-    require("compass").setup({
-      history = {
-        mode = "graph",
-      },
-    })
-  end,
-}
-```
-
-## Configuration
-
-```lua
-require("compass").setup({
-  history = {
-    mode = "graph", -- "graph" | "linear"
-  },
-  debug = false,
-})
-```
-
-### Example Configuration
-
-```lua
--- Minimal configuration (uses defaults)
-require("compass").setup({})
-
--- With custom settings
-require("compass").setup({
-  history = {
-    mode = "linear", -- Use linear mode instead of graph
-  },
-  debug = false,
-})
-```
-
-### Example Keymaps
-
-```lua
-vim.keymap.set('n', '<C-u>', '<cmd>CompassBack<CR>', { desc = '[C]ompass [B]ack' })
-vim.keymap.set('n', '<C-i>', '<cmd>CompassForward<CR>', { desc = '[C]ompass [F]orward' })
-vim.keymap.set('n', '<C-o>', '<cmd>CompassDebugDump<CR>', { desc = '[C]ompass [D]ebug dump' })
-```
 
 ### Options
 
@@ -83,11 +34,6 @@ vim.keymap.set('n', '<C-o>', '<cmd>CompassDebugDump<CR>', { desc = '[C]ompass [D
 - **Description**: 
   - `"graph"`: Preserves all navigation branches
   - `"linear"`: Prunes forward history when navigating to a new buffer from a previous position
-
-#### `debug`
-- **Type**: `boolean`
-- **Default**: `false`
-- **Description**: Enable debug mode (reserved for future use)
 
 ## API
 
@@ -129,24 +75,6 @@ Display a debug dump of the navigation state.
 - Displays total number of nodes
 - Prints the navigation tree structure
 - **Path from current to root is highlighted in green**
-
-### Programmatic API
-
-#### `require("compass").setup(config)`
-Initialize the plugin with the given configuration.
-
-#### `require("compass").toggle_history_mode()`
-Programmatically toggle between graph and linear modes.
-
-#### `require("compass").get_config()`
-Get the current configuration.
-
-## How It Works
-
-- **Nodes represent visits, not buffers**: The same buffer can appear multiple times in the history
-- **Root node**: The first valid buffer you open becomes the root node
-- **Automatic tracking**: Buffer navigation is automatically detected via `BufEnter` and `BufReadPost` events
-- **Filtering**: Only valid file buffers with names are tracked (temporary buffers are ignored)
 
 ## Examples
 
