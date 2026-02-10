@@ -18,9 +18,9 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
       },
     })
 
-    vim.keymap.set('n', '<C-u>', '<cmd>CompassBack<CR>', { desc = '[C]ompass [B]ack' })
-    vim.keymap.set('n', '<C-i>', '<cmd>CompassForward<CR>', { desc = '[C]ompass [F]orward' })
-    vim.keymap.set('n', '<C-o>', '<cmd>CompassDebugDump<CR>', { desc = '[C]ompass [D]ebug dump' })
+    vim.keymap.set('n', '<C-j>', '<cmd>CompassBack<CR>', { desc = '[C]ompass [B]ack' })
+    vim.keymap.set('n', '<C-k>', '<cmd>CompassForward<CR>', { desc = '[C]ompass [F]orward' })
+    vim.keymap.set('n', '<C-l>', '<cmd>CompassDebugDump<CR>', { desc = '[C]ompass [D]ebug dump' })
   end,
 }
 ```
